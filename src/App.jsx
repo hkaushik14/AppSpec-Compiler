@@ -1789,6 +1789,9 @@ Pure JSON only. No explanation. No markdown.`;
         if (!repairedDesign.role_permissions) {
           repairedDesign.role_permissions = {};
         }
+        if (!repairedDesign.role_permissions.guest) {
+  repairedDesign.role_permissions.guest = ["read"];
+}
         let rolesAdded = 0;
         
         for (const page of currentUi.pages || []) {
