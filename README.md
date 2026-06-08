@@ -1,4 +1,4 @@
-# Natural Language to Full-Stack App Generator
+# AppSpec Compiler
 
 An AI-powered schema compiler that transforms natural language product requirements into structured full-stack application specifications, including system architecture, database schemas, API contracts, UI definitions, authentication policies, and validation reports.
 
