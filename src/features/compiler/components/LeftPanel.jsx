@@ -3,16 +3,17 @@ import { PanelHeader } from "../../../components/ui/PanelHeader.jsx";
 import { Kbd } from "../../../components/ui/Kbd.jsx";
 import { Badge } from "../../../components/ui/Badge.jsx";
 import { SUGGESTIONS } from "../../../constants/compiler.js";
+import { Edit3, Play, Trash2, HelpCircle, Terminal, Layers } from "lucide-react";
 
 const logColor = {
-  system: "#38bdf8",
-  meta: "#334155",
-  stage: "#818cf8",
-  info: "#475569",
-  success: "#34d399",
-  warn: "#fb923c",
-  error: "#f87171",
-  repair: "#fbbf24"
+  system: "text-sky-400",
+  meta: "text-slate-600",
+  stage: "text-indigo-400",
+  info: "text-slate-400",
+  success: "text-emerald-400",
+  warn: "text-amber-500 font-medium",
+  error: "text-rose-400 font-semibold",
+  repair: "text-amber-400 font-semibold"
 };
 
 export function LeftPanel({
@@ -34,123 +35,138 @@ export function LeftPanel({
   }, [logs]);
 
   return (
-    <div style={{ borderRight:"1px solid #080f1e", display:"flex", flexDirection:"column", overflow:"hidden", background:"#030b18" }}>
-      {/* Prompt editor */}
-      <div style={{ flexShrink:0 }}>
-        <PanelHeader icon="◎" title="PROMPT EDITOR" accent="#38bdf8"
-          right={<span style={{ fontSize:9, color:"#1e3a5f" }}>{prompt.length} chars</span>}
+    <div className="flex flex-col h-full overflow-hidden bg-slate-950/45 divide-y divide-white/[0.04]">
+      
+      {/* Prompt editor panel section */}
+      <div className="shrink-0 flex flex-col bg-slate-950/20">
+        <PanelHeader 
+          icon={<Edit3 className="w-3.5 h-3.5" />} 
+          title="Prompt Editor" 
+          accent="#38bdf8"
+          right={<span className="font-mono text-[9px] text-slate-500">{prompt.length} chars</span>}
         />
-        <div style={{ padding:"10px 12px" }}>
+        
+        <div className="p-3">
           <textarea
             value={prompt}
             onChange={e=>setPrompt(e.target.value)}
-            onKeyDown={e=>{ if((e.ctrlKey||e.key === 'Meta')&&e.key==="Enter") runPipeline(); }}
-            placeholder={"Describe your app in plain English…\n\ne.g. A task manager with teams, tags,\ndue dates and email notifications."}
-            rows={6}
-            style={{
-              width:"100%", background:"#020810", border:`1px solid ${running?"#38bdf855":"#0f172a"}`,
-              borderRadius:6, padding:"10px 11px", fontFamily:"inherit", fontSize:11,
-              color:"cbd5e1", resize:"none", outline:"none", lineHeight:1.65,
-              transition:"border-color 0.2s",
-            }}
-            onFocus={e=>e.target.style.borderColor="#38bdf855"}
-            onBlur={e=>{ if(!running) e.target.style.borderColor="#0f172a"; }}
+            onKeyDown={e=>{ if((e.ctrlKey||e.metaKey)&&e.key==="Enter" && prompt.trim() && !running) runPipeline(); }}
+            placeholder={"Describe your app in plain English..."}
+            rows={5}
+            className="w-full custom-textarea rounded-xl p-3 text-xs leading-relaxed outline-none resize-none font-sans"
+            disabled={running}
           />
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:6 }}>
-            <span style={{ fontSize:9, color:"#1e3a5f" }}><Kbd>⌘↵</Kbd> run</span>
-            {prompt && <button onClick={()=>setPrompt("")} style={{ fontSize:9, color:"#334155", background:"none", border:"none", cursor:"pointer" }}>clear</button>}
+          
+          <div className="flex justify-between items-center mt-2 px-1 select-none">
+            <span className="text-[9px] text-slate-500 flex items-center gap-1 font-mono">
+              <Kbd>Ctrl + Enter</Kbd> to compile
+            </span>
+            {prompt && !running && (
+              <button 
+                onClick={()=>setPrompt("")} 
+                className="text-[9px] text-slate-500 hover:text-slate-300 hover:underline cursor-pointer font-mono"
+              >
+                clear
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Suggestions */}
-        {!prompt && (
-          <div style={{ padding:"0 12px 10px" }}>
-            <div style={{ fontSize:9, color:"#1e3a5f", letterSpacing:"0.1em", marginBottom:6 }}>QUICK START</div>
-            {SUGGESTIONS.map((s,i)=>(
-              <div key={i} onClick={()=>setPrompt(s)} style={{
-                fontSize:10, color:"#334155", padding:"5px 8px", borderRadius:4, cursor:"pointer",
-                border:"1px solid #080f1e", marginBottom:4, lineHeight:1.4,
-                background:"#020810", transition:"all 0.15s",
-              }}
-                onMouseEnter={e=>{ e.currentTarget.style.color="#38bdf8"; e.currentTarget.style.borderColor="#38bdf830"; }}
-                onMouseLeave={e=>{ e.currentTarget.style.color="#334155"; e.currentTarget.style.borderColor="#080f1e"; }}
-              >
-                › {s}
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div style={{ display:"flex", gap:6, margin:"0 12px 12px" }}>
+        {/* Compile button container */}
+        <div className="flex gap-2 px-3 pb-3">
           <button
             onClick={runPipeline}
             disabled={running || !prompt.trim()}
-            style={{
-              flex:1, padding:"9px 0",
-              background: running?"#0a1628": prompt.trim()?"#0c1e38":"#070d1a",
-              color: running?"#38bdf8": prompt.trim()?"#38bdf8":"#1e3a5f",
-              border:`1px solid ${running?"#38bdf840":prompt.trim()?"#38bdf830":"#0f172a"}`,
-              borderRadius:6, fontFamily:"inherit", fontSize:11, fontWeight:600,
-              letterSpacing:"0.08em", cursor:running||!prompt.trim()?"not-allowed":"pointer",
-              transition:"all 0.2s", display:"flex", alignItems:"center", justifyContent:"center", gap:8,
-            }}
+            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold tracking-wide flex items-center justify-center gap-1.5 transition-all select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+              running 
+                ? "bg-slate-900 border border-white/[0.06] text-amber-400" 
+                : "btn-primary"
+            }`}
           >
-            {running ? <><span style={{ animation:"blink 1s infinite" }}>▶</span> COMPILING…</> : done ? "↺ RE-COMPILE" : "▶ COMPILE SCHEMA"}
+            {running ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                Compiling...
+              </>
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5 fill-white/10" />
+                {done ? "Re-Compile" : "Compile Schema"}
+              </>
+            )}
           </button>
+          
           <button
             onClick={handleReset}
             disabled={running}
-            title="Clear prompt, schemas, logs, metrics, and generated code"
-            style={{
-              padding:"9px 12px",
-              background:"#311018",
-              color: running?"#7f1d1d":"#f87171",
-              border:"1px solid #f8717140",
-              borderRadius:6, fontFamily:"inherit", fontSize:10, fontWeight:600,
-              letterSpacing:"0.06em", cursor:running?"not-allowed":"pointer",
-              transition:"all 0.2s", flexShrink:0,
-            }}
+            title="Reset compiler dashboard"
+            className="p-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors cursor-pointer"
           >
-            Reset ↺
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Assumptions */}
-      <div style={{ flexShrink:0, borderTop:"1px solid #080f1e" }}>
-        <PanelHeader icon="⊳" title="INFERRED ASSUMPTIONS" accent="#818cf8"
-          right={assumptions.length ? <Badge label={`${assumptions.length} found`} color="#818cf8" /> : null}
+      {/* Inferred Assumptions section */}
+      <div className="shrink-0 flex flex-col bg-slate-950/20 max-h-[220px]">
+        <PanelHeader 
+          icon={<Layers className="w-3.5 h-3.5" />} 
+          title="Inferred Assumptions" 
+          accent="#818cf8"
+          right={assumptions.length ? <Badge label={`${assumptions.length} tags`} color="#818cf8" /> : null}
         />
-        <div style={{ padding:"8px 12px 10px", minHeight:60 }}>
+        <div className="p-3 overflow-y-auto max-h-[170px] select-none">
           {assumptions.length ? (
-            <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+            <div className="flex flex-col gap-2">
               {assumptions.map((a,i)=>(
-                <div key={i} style={{ display:"grid", gridTemplateColumns:"110px 1fr", gap:6, animation:`slideDown 0.2s ease ${i*0.04}s both` }}>
-                  <span style={{ fontSize:9, color:"#334155", paddingTop:1 }}>{a.key}</span>
-                  <span style={{ fontSize:10, color:"#64748b" }}>{a.val} <span style={{ fontSize:8, color:"#1e3a5f" }}>[{a.src}]</span></span>
+                <div 
+                  key={i} 
+                  className="grid grid-cols-[85px_1fr] gap-2 items-start text-[10px] leading-relaxed animate-fade-in"
+                  style={{ animationDelay: `${i * 0.03}s` }}
+                >
+                  <span className="font-mono text-slate-500 font-semibold truncate" title={a.key}>{a.key}</span>
+                  <span className="text-slate-300 text-left font-light break-words">
+                    {a.val} <span className="text-indigo-400/60 text-[8px] font-mono">[{a.src}]</span>
+                  </span>
                 </div>
               ))}
             </div>
           ) : (
-            <span style={{ fontSize:10, color:"#1e3a5f" }}>awaiting pipeline run…</span>
+            <span className="text-[10px] text-slate-600 font-mono">awaiting pipeline execution...</span>
           )}
         </div>
       </div>
 
-      {/* Activity log */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", borderTop:"1px solid #080f1e", overflow:"hidden" }}>
-        <PanelHeader icon="▸" title="EXECUTION LOG"
-          right={<span style={{ fontSize:9, color:"#1e3a5f" }}>{logs.length} entries</span>}
+      {/* Activity Terminal Console section */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <PanelHeader 
+          icon={<Terminal className="w-3.5 h-3.5" />} 
+          title="Execution Logs" 
+          accent="#34d399"
+          right={<span className="font-mono text-[9px] text-slate-500">{logs.length} items</span>}
         />
-        <div ref={logRef} style={{ flex:1, overflowY:"auto", padding:"8px 10px", fontFamily:"inherit", fontSize:10, lineHeight:1.7 }}>
-          {logs.length===0 && <span style={{ color:"#1e3a5f" }}>$ _</span>}
-          {logs.map(l=>(
-            <div key={l.id} style={{ display:"flex", gap:8, color:logColor[l.type]||"#334155", animation:"fadeIn 0.15s ease" }}>
-              <span style={{ color:"#1e3a5f", flexShrink:0, fontSize:9, marginTop:1 }}>{l.t}</span>
-              <span style={{ wordBreak:"break-all" }}>{l.msg}</span>
+        <div 
+          ref={logRef} 
+          className="flex-1 overflow-y-auto p-3 font-mono text-[10px] leading-relaxed space-y-1 bg-black/30 scrollbar-none"
+        >
+          {logs.length === 0 && (
+            <span className="text-slate-700 animate-pulse">$ awaiting compilation launch...</span>
+          )}
+          {logs.map((l) => (
+            <div 
+              key={l.id} 
+              className={`flex items-start gap-2 animate-fade-in ${logColor[l.type] || "text-slate-400"}`}
+            >
+              <span className="text-slate-700 text-[8px] font-medium mt-[1px] select-none shrink-0">{l.t}</span>
+              <span className="break-all text-left">{l.msg}</span>
             </div>
           ))}
-          {running && <span style={{ color:"#38bdf8", animation:"blink 1s infinite", fontSize:11 }}>▋</span>}
+          {running && (
+            <div className="flex items-center gap-1 mt-1 text-indigo-400 font-semibold select-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping mr-1" />
+              <span>executing pipeline task...</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

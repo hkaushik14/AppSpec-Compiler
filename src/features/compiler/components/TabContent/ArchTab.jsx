@@ -1,32 +1,78 @@
 import { ArchGraph } from "../../../../components/ui/ArchGraph.jsx";
 import { ARCH_NODES } from "../../../../constants/compiler.js";
+import { Network, Server } from "lucide-react";
 
 export function ArchTab({ done }) {
   return (
-    <div style={{ flex:1, overflow:"auto", padding:16 }}>
-      <div style={{ background:"#030b18", border:"1px solid #0f172a", borderRadius:8, padding:16, marginBottom:12 }}>
-        <div style={{ fontSize:9, color:"#334155", letterSpacing:"0.1em", marginBottom:12 }}>SERVICE DEPENDENCY GRAPH</div>
-        <ArchGraph active={done} />
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-5xl mx-auto w-full select-none">
+      
+      {/* Topology Graph Container */}
+      <div className="glass-card rounded-xl border border-white/[0.04] p-4.5 shadow-xl relative overflow-hidden bg-slate-950/20">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/[0.01] rounded-full blur-2xl pointer-events-none" />
+        
+        <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 tracking-widest uppercase font-mono mb-4">
+          <Network className="w-3.5 h-3.5 text-indigo-400" />
+          <span>Service Dependency Graph</span>
+        </div>
+        
+        <div className="flex items-center justify-center p-2 rounded-lg bg-black/10 border border-white/[0.02]">
+          <ArchGraph active={done} />
+        </div>
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-        {ARCH_NODES.map(n=>(
-          <div key={n.id} style={{ background:"#030b18", border:`1px solid ${done?n.color+"40":"#0f172a"}`, borderRadius:6, padding:"8px 12px", display:"flex", gap:8, alignItems:"center" }}>
-            <div style={{ width:8, height:8, borderRadius:2, background:done?n.color:"#0f172a", transition:"all 0.3s", boxShadow:done?`0 0 6px ${n.color}`:""  }} />
-            <div>
-              <div style={{ fontSize:11, color:done?"#cbd5e1":"#334155" }}>{n.label}</div>
-              <div style={{ fontSize:9, color:"#1e3a5f" }}>
-                {n.id === "client" ? "browser SPA" :
-                 n.id === "gateway" ? "express:3000" :
-                 n.id === "auth" ? "jwt+oauth2" :
-                 n.id === "task" ? "REST service" :
-                 n.id === "notify" ? "email+push" :
-                 n.id === "db" ? "pg:5432" :
-                 n.id === "redis" ? "6379" :
-                 n.id === "queue" ? "bull+redis" : ""}
+
+      {/* Services Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        {ARCH_NODES.map((n) => {
+          const isClient = n.id === "client";
+          const isGateway = n.id === "gateway";
+          const isAuth = n.id === "auth";
+          const isTask = n.id === "task";
+          const isNotify = n.id === "notify";
+          const isDb = n.id === "db";
+          const isRedis = n.id === "redis";
+          const isQueue = n.id === "queue";
+
+          let desc = "Service Endpoint";
+          if (isClient) desc = "Browser Single Page App";
+          else if (isGateway) desc = "Express Gateway (Port 3000)";
+          else if (isAuth) desc = "OAuth2 JWT Authenticator";
+          else if (isTask) desc = "Core REST Microservice";
+          else if (isNotify) desc = "Email & Push Broker";
+          else if (isDb) desc = "PostgreSQL DB (Port 5432)";
+          else if (isRedis) desc = "Memory Cache (Port 6379)";
+          else if (isQueue) desc = "Bull MQ Task Executor";
+
+          return (
+            <div 
+              key={n.id} 
+              className={`glass-card rounded-xl border p-3 flex gap-3 items-center transition-all duration-300 ${
+                done 
+                  ? "border-white/[0.06] hover:border-white/[0.12]" 
+                  : "border-transparent bg-slate-950/10 opacity-40"
+              }`}
+            >
+              {/* Left Color Indicator Dot */}
+              <div 
+                className="w-1.5 h-8 rounded-full shrink-0 transition-all duration-300"
+                style={{ 
+                  backgroundColor: done ? n.color : "rgba(255,255,255,0.05)",
+                  boxShadow: done ? `0 0 8px ${n.color}` : "none"
+                }}
+              />
+              
+              <div className="min-w-0">
+                <div className={`text-xs font-bold font-display leading-tight truncate ${
+                  done ? "text-slate-200" : "text-slate-600"
+                }`}>
+                  {n.label}
+                </div>
+                <div className="text-[9px] font-mono text-slate-500 mt-1 truncate">
+                  {desc}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

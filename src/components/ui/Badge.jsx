@@ -1,12 +1,23 @@
-export function Badge({ label, color, pulse }) {
+import React from "react";
+
+export function Badge({ label, color = "#3b82f6", pulse }) {
   return (
-    <span style={{
-      fontSize:9, padding:"2px 7px", borderRadius:3, letterSpacing:"0.07em",
-      background:`${color}18`, color, border:`0.5px solid ${color}55`,
-      display:"inline-flex", alignItems:"center", gap:4,
-      animation: pulse ? "blink 1.1s ease-in-out infinite" : "none",
-    }}>
-      {pulse && <span style={{ width:5, height:5, borderRadius:"50%", background:color, display:"inline-block" }} />}
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase border transition-all duration-300 select-none"
+      style={{
+        backgroundColor: `${color}0d`,
+        color: color,
+        borderColor: `${color}25`,
+        boxShadow: pulse ? `0 0 10px -2px ${color}30` : "none",
+        animation: pulse ? "blink 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite" : "none"
+      }}
+    >
+      {pulse && (
+        <span 
+          className="w-1 h-1 rounded-full animate-pulse mr-0.5" 
+          style={{ backgroundColor: color }} 
+        />
+      )}
       {label}
     </span>
   );
@@ -14,12 +25,12 @@ export function Badge({ label, color, pulse }) {
 
 export function StatusBadge({ status }) {
   const cfg = {
-    idle:    { color:"#334155", label:"IDLE" },
-    queued:  { color:"#94a3b8", label:"QUEUED" },
+    idle:    { color:"#94a3b8", label:"IDLE" },
+    queued:  { color:"#64748b", label:"QUEUED" },
     running: { color:"#fbbf24", label:"RUNNING", pulse:true },
-    done:    { color:"#34d399", label:"DONE" },
-    error:   { color:"#f87171", label:"ERROR" },
-    warn:    { color:"#fb923c", label:"WARN" },
+    done:    { color:"#10b981", label:"DONE" },
+    error:   { color:"#ef4444", label:"ERROR" },
+    warn:    { color:"#f97316", label:"WARN" },
   };
   const c = cfg[status] || cfg.idle;
   return <Badge label={c.label} color={c.color} pulse={c.pulse} />;

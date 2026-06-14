@@ -1,6 +1,7 @@
 import { Badge, StatusBadge } from "../../../../components/ui/Badge.jsx";
 import { JsonTree } from "../../../../components/ui/JsonTree.jsx";
 import { STAGES } from "../../../../constants/compiler.js";
+import { ChevronDown, FileJson, Sparkles, CheckCircle } from "lucide-react";
 
 export function PipelineTab({
   statuses,
@@ -15,68 +16,109 @@ export function PipelineTab({
   downloadJSON
 }) {
   return (
-    <div style={{ flex:1, overflow:"auto", padding:16 }}>
+    <div className="flex-1 overflow-y-auto p-4 space-y-3.5 max-w-5xl mx-auto w-full select-none">
+      
       {/* Stage cards */}
-      {STAGES.map((stage,idx)=>{
+      {STAGES.map((stage, idx) => {
         const st = statuses[stage.id];
         const isExp = expanded[stage.id];
         const out = stageOutputs[stage.id];
-        const isRunning = st==="running";
-        const isDone = st==="done";
+        const isRunning = st === "running";
+        const isDone = st === "done";
+        const isFailed = st === "error";
+
+        let borderStyle = "border-white/[0.04]";
+        let glowStyle = "shadow-md";
+        let leftBarColor = "bg-slate-800";
+
+        if (isDone) {
+          borderStyle = "border-emerald-500/20";
+          glowStyle = "shadow-[0_0_15px_-3px_rgba(16,185,129,0.06)]";
+          leftBarColor = "bg-emerald-400 shadow-[0_0_8px_#34d399]";
+        } else if (isRunning) {
+          borderStyle = "border-amber-500/20";
+          glowStyle = "shadow-[0_0_15px_-3px_rgba(245,158,11,0.06)]";
+          leftBarColor = "bg-amber-400 animate-pulse shadow-[0_0_8px_#fbbf24]";
+        } else if (isFailed) {
+          borderStyle = "border-red-500/20";
+          glowStyle = "shadow-[0_0_15px_-3px_rgba(239,68,68,0.06)]";
+          leftBarColor = "bg-red-400 shadow-[0_0_8px_#f87171]";
+        }
+
         return (
-          <div key={stage.id} style={{
-            marginBottom:8, border:`1px solid ${isDone?stage.color+"40":isRunning?stage.color+"30":"#0f172a"}`,
-            borderRadius:8, overflow:"hidden", background:"#030b18",
-            boxShadow:isDone?`0 0 12px ${stage.color}15`:"none",
-            transition:"all 0.3s", animation:`slideDown 0.3s ease ${idx*0.05}s both`,
-          }}>
+          <div 
+            key={stage.id} 
+            className={`glass-card rounded-xl border overflow-hidden transition-all duration-300 ${borderStyle} ${glowStyle} animate-fade-in`}
+            style={{ animationDelay: `${idx * 0.05}s` }}
+          >
             {/* Stage header */}
-            <div onClick={()=>setExpanded(p=>({...p,[stage.id]:!p[stage.id]}))}
-              style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px", cursor:"pointer",
-                background:isRunning?`${stage.color}08`:"transparent" }}>
-              {/* Progress line accent */}
-              <div style={{ width:3, height:32, borderRadius:2, background:isDone?stage.color:isRunning?stage.color:"#0f172a", flexShrink:0, transition:"all 0.4s", boxShadow:isDone||isRunning?`0 0 8px ${stage.color}`:""  }} />
-              <span style={{ fontSize:9, color:"#1e3a5f", minWidth:20 }}>{stage.num}</span>
-              <span style={{ fontSize:13, marginRight:2 }}>{stage.icon}</span>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:11, fontWeight:600, color:isDone?"#e2e8f0":isRunning?"#cbd5e1":"#334155", marginBottom:1, transition:"color 0.3s" }}>
+            <div 
+              onClick={() => setExpanded(p => ({ ...p, [stage.id]: !p[stage.id] }))}
+              className={`flex items-center gap-4 px-4 py-3 cursor-pointer ${
+                isRunning ? "bg-amber-500/[0.02]" : "bg-transparent hover:bg-white/[0.01]"
+              }`}
+            >
+              {/* Progress left accent bar */}
+              <div className={`w-1 h-8 rounded-full shrink-0 transition-all duration-300 ${leftBarColor}`} />
+              
+              <span className="font-mono text-[10px] text-slate-500 font-bold w-6 shrink-0">{stage.num}</span>
+              <span className="text-sm shrink-0" style={{ color: stage.color }}>{stage.icon}</span>
+              
+              <div className="flex-1 min-w-0">
+                <div className={`text-xs font-bold transition-colors select-none ${
+                  isDone ? "text-slate-200" : isRunning ? "text-indigo-400" : "text-slate-500"
+                }`}>
                   {stage.name}
                 </div>
                 {stage.subs && (
-                  <div style={{ display:"flex", gap:4 }}>
-                    {stage.subs.map(b=>(
-                      <Badge key={b} label={b} color={
-                        subSt[b]==="done"?"#34d399":subSt[b]==="running"?"#fbbf24":"#334155"
-                      } pulse={subSt[b]==="running"} />
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {stage.subs.map(b => (
+                      <Badge 
+                        key={b} 
+                        label={b} 
+                        color={
+                          subSt[b] === "done" ? "#10b981" : subSt[b] === "running" ? "#fbbf24" : "#64748b"
+                        } 
+                        pulse={subSt[b] === "running"} 
+                      />
                     ))}
                   </div>
                 )}
               </div>
-              {out && <span style={{ fontSize:9, color:"#334155", marginRight:8 }}>
-                {Object.keys(out).length} fields
-              </span>}
+              
+              {out && !out.error && (
+                <span className="text-[9px] font-mono text-slate-500 mr-2 shrink-0">
+                  {Object.keys(out).length} nodes
+                </span>
+              )}
+              
               <StatusBadge status={st} />
-              <span style={{ color:"#1e3a5f", fontSize:11, marginLeft:4, transform:isExp?"rotate(180deg)":"", display:"inline-block", transition:"transform 0.2s" }}>⌄</span>
+              
+              <ChevronDown 
+                className={`w-3.5 h-3.5 text-slate-600 ml-2 transition-transform duration-250 ${
+                  isExp ? "transform rotate-180 text-indigo-400" : ""
+                }`} 
+              />
             </div>
 
-            {/* Stage output */}
+            {/* Stage output (Collapsible JSON / Logs) */}
             {isExp && (
-              <div style={{ padding:"0 14px 12px 14px", borderTop:"1px solid #0a1628", animation:"fadeIn 0.2s ease" }}>
-                <div style={{ background:"#020810", borderRadius:5, padding:"10px 12px", fontFamily:"inherit", fontSize:11, lineHeight:1.8, maxHeight:180, overflowY:"auto" }}>
+              <div className="px-4 pb-3 border-t border-white/[0.03] bg-black/10 animate-fade-in">
+                <div className="mt-3 bg-slate-950/80 border border-white/[0.03] rounded-lg p-3.5 max-h-52 overflow-y-auto">
                   {out && out.error ? (
-                    <span style={{ color: "#f87171" }}>Error: {out.error}</span>
+                    <span className="text-rose-400 font-mono text-[11px]">Error: {out.error}</span>
                   ) : stage.id === "validation" ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div className="space-y-3">
                       {validationResults.map((r, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 11 }}>
-                          <span style={{ color: r.ok ? "#34d399" : "#f87171", fontWeight: "bold" }}>
+                        <div key={i} className="flex items-start gap-2 text-xs">
+                          <span className={`font-bold mt-0.5 ${r.ok ? "text-emerald-400" : "text-rose-400"}`}>
                             {r.ok ? "✓" : "✗"}
                           </span>
                           <div>
-                            <span style={{ color: "#e2e8f0", fontWeight: 500 }}>{r.name}</span>
-                            <span style={{ color: "#64748b", fontSize: 10, display: "block" }}>{r.msg}</span>
+                            <span className="text-slate-200 font-semibold">{r.name}</span>
+                            <span className="text-slate-500 text-[10px] block mt-0.5">{r.msg}</span>
                             {!r.ok && r.failures && r.failures.length > 0 && (
-                              <ul style={{ paddingLeft: 14, listStyleType: "circle", color: "#f87171", fontSize: 9, marginTop: 2 }}>
+                              <ul className="pl-4 list-disc text-rose-400 text-[10px] mt-1.5 space-y-1">
                                 {r.failures.map((f, fi) => <li key={fi}>{f}</li>)}
                               </ul>
                             )}
@@ -84,15 +126,16 @@ export function PipelineTab({
                         </div>
                       ))}
                       {repairAttempts > 0 && (
-                        <div style={{ fontSize: 10, color: "#fbbf24", marginTop: 4, borderTop: "1px dashed #1e293b", paddingTop: 4 }}>
-                          Repairs attempted: {repairAttempts} / 3
+                        <div className="text-[10px] text-amber-400 font-mono flex items-center gap-1.5 pt-2 border-t border-dashed border-white/[0.06]">
+                          <Sparkles className="w-3 h-3 text-amber-400" />
+                          <span>Repairs attempted: {repairAttempts} / 3</span>
                         </div>
                       )}
                     </div>
                   ) : out ? (
                     <JsonTree data={out} />
                   ) : (
-                    <span style={{ color: "#475569" }}>No output available. Run compilation.</span>
+                    <span className="text-slate-600 font-mono text-[10px]">No outputs synthesized. Execute compiler launch.</span>
                   )}
                 </div>
               </div>
@@ -101,16 +144,27 @@ export function PipelineTab({
         );
       })}
 
-      {/* Done summary bar */}
+      {/* Done summary status bar */}
       {done && metrics && (
-        <div style={{ marginTop:8, padding:"10px 14px", background:"#020f1a", border:"1px solid #34d39930", borderRadius:8, display:"flex", gap:16, alignItems:"center", animation:"slideDown 0.3s ease" }}>
-          <span style={{ color:"#34d399", fontSize:11, fontWeight:600 }}>✓ PIPELINE COMPLETE</span>
-          <span style={{ fontSize:10, color:"#334155" }}>{metrics.stageMs.reduce((a,b)=>a+b,0)}ms total</span>
-          <span style={{ fontSize:10, color:"#334155" }}>{metrics.tables} tables  {metrics.endpoints} endpoints  {metrics.components} components</span>
-          <span style={{ fontSize:10, color:metrics.warnings>0?"#fb923c":"#34d399" }}>{metrics.warnings} warnings  {metrics.repairs} repairs</span>
-          <div style={{ flex:1 }} />
-          <button onClick={()=>downloadJSON(null)} style={{ fontSize:10, color:"#38bdf8", background:"#0a1e32", border:"1px solid #38bdf830", borderRadius:5, padding:"4px 10px", cursor:"pointer", fontFamily:"inherit" }}>
-            ↓ ALL SCHEMAS
+        <div className="mt-4 p-3 bg-emerald-500/[0.03] border border-emerald-500/20 rounded-xl flex flex-wrap gap-x-6 gap-y-2 items-center shadow-lg animate-fade-in">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 font-mono tracking-wider uppercase select-none">
+            <CheckCircle className="w-3.5 h-3.5" />
+            <span>✓ Compile Pipeline Completed</span>
+          </div>
+          <span className="text-[10px] text-slate-500 font-mono">{metrics.stageMs.reduce((a,b)=>a+b,0)}ms latency</span>
+          <span className="text-[10px] text-slate-400 font-mono">
+            {metrics.tables} tables &bull; {metrics.endpoints} endpoints &bull; {metrics.components} views
+          </span>
+          <span className={`text-[10px] font-mono ${metrics.warnings > 0 ? "text-amber-400" : "text-emerald-400"}`}>
+            {metrics.warnings} warnings &bull; {metrics.repairs} repairs
+          </span>
+          <div className="flex-1" />
+          <button 
+            onClick={() => downloadJSON(null)} 
+            className="flex items-center gap-1 px-3 py-1 bg-slate-900 border border-white/[0.06] text-indigo-400 hover:text-indigo-300 rounded-lg text-[10px] font-bold transition-all cursor-pointer font-mono shadow-sm"
+          >
+            <FileJson className="w-3 h-3" />
+            <span>ALL SCHEMAS</span>
           </button>
         </div>
       )}

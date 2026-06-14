@@ -2,15 +2,25 @@ import { useEffect, useRef } from "react";
 import { PanelHeader } from "../../../components/ui/PanelHeader.jsx";
 import { Badge, StatusBadge } from "../../../components/ui/Badge.jsx";
 import { STAGES, SCHEMA_TABS } from "../../../constants/compiler.js";
+import { 
+  AlertCircle, 
+  CheckCircle, 
+  ListChecks, 
+  Download, 
+  FileJson,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle
+} from "lucide-react";
 
 const repairColor = {
-  system: "#38bdf8",
-  meta: "#475569",
-  success: "#34d399",
-  warn: "#fb923c",
-  error: "#f87171",
-  repair: "#fbbf24",
-  info: "#475569"
+  system: "text-sky-400",
+  meta: "text-slate-600",
+  success: "text-emerald-400",
+  warn: "text-amber-500 font-medium",
+  error: "text-rose-400 font-semibold",
+  repair: "text-amber-400 font-semibold",
+  info: "text-slate-400"
 };
 
 export function RightPanel({
@@ -28,40 +38,93 @@ export function RightPanel({
     }
   }, [repairLogs]);
 
+  // Derived warning count
+  const warnCount = repairLogs.filter(l => l.type === "warn" || l.type === "error").length;
+
   return (
-    <div style={{ borderLeft:"1px solid #080f1e", display:"flex", flexDirection:"column", overflow:"hidden", background:"#030b18" }}>
-      {/* Validation log */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", borderBottom:"1px solid #080f1e" }}>
-        <PanelHeader icon="⚿" title="VALIDATION LOG" accent="#fb923c"
-          right={done ? <Badge label={`${repairLogs.filter(l=>l.type==="warn").length}W`} color="#fb923c" /> : null}
+    <div className="flex flex-col h-full overflow-hidden bg-slate-950/45 divide-y divide-white/[0.04]">
+      
+      {/* 1. Validation logs (Scrollable terminal log) */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <PanelHeader 
+          icon={<AlertCircle className="w-3.5 h-3.5" />} 
+          title="Validation Console" 
+          accent="#fb923c"
+          right={done ? <Badge label={`${warnCount} events`} color={warnCount > 0 ? "#fb923c" : "#10b981"} /> : null}
         />
-        <div ref={repairRef} style={{ flex:1, overflowY:"auto", padding:"8px 10px", fontFamily:"inherit", fontSize:10, lineHeight:1.7 }}>
-          {repairLogs.length===0 && <span style={{ color:"#1e3a5f" }}>awaiting validation…</span>}
-          {repairLogs.map(l=>(
-            <div key={l.id} style={{ display:"flex", gap:6, color:repairColor[l.type]||"#334155", animation:"fadeIn 0.1s ease", flexWrap:"wrap" }}>
-              <span style={{ color:"#1e3a5f", flexShrink:0, fontSize:9, marginTop:1 }}>{l.t}</span>
-              <span style={{ wordBreak:"break-all" }}>{l.msg}</span>
+        
+        <div 
+          ref={repairRef} 
+          className="flex-1 overflow-y-auto p-3 font-mono text-[10px] leading-relaxed space-y-1 bg-black/30 scrollbar-none"
+        >
+          {repairLogs.length === 0 && (
+            <span className="text-slate-700 animate-pulse">$ awaiting schema validation checks...</span>
+          )}
+          {repairLogs.map((l) => (
+            <div 
+              key={l.id} 
+              className={`flex items-start gap-1.5 animate-fade-in ${repairColor[l.type] || "text-slate-400"}`}
+            >
+              <span className="text-slate-700 text-[8px] mt-[1.5px] select-none shrink-0 font-medium">{l.t}</span>
+              <span className="break-all text-left">{l.msg}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Stage summary */}
-      <div style={{ flexShrink:0, borderBottom:"1px solid #080f1e" }}>
-        <PanelHeader icon="⊳" title="STAGE STATUS" />
-        <div style={{ padding:"8px 12px" }}>
-          {STAGES.map(s=>{
+      {/* 2. Stepper Checklist (Vertical Checklist) */}
+      <div className="shrink-0 flex flex-col bg-slate-950/20">
+        <PanelHeader 
+          icon={<ListChecks className="w-3.5 h-3.5" />} 
+          title="Pipeline Checklist" 
+          accent="#6366f1"
+        />
+        <div className="p-3.5 space-y-3 select-none">
+          {STAGES.map((s) => {
             const st = statuses[s.id];
             const out = stageOutputs[s.id];
+            const isDone = st === "done";
+            const isRunning = st === "running";
+            const isFailed = st === "error";
+
+            let borderStyle = "border-white/[0.04] bg-slate-950/20";
+            if (isDone) borderStyle = "border-emerald-500/20 bg-emerald-500/[0.02]";
+            if (isRunning) borderStyle = "border-amber-500/20 bg-amber-500/[0.02]";
+            if (isFailed) borderStyle = "border-red-500/20 bg-red-500/[0.02]";
+
             return (
-              <div key={s.id} style={{ display:"flex", alignItems:"center", gap:6, marginBottom:5 }}>
-                <div style={{ width:3, height:28, borderRadius:2, background:st==="done"?s.color:st==="running"?s.color:"#0f172a", flexShrink:0, transition:"all 0.3s" }} />
-                <div style={{ flex:1 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <span style={{ fontSize:10, color:st==="done"?"#94a3b8":"#334155" }}>{s.name}</span>
-                    <StatusBadge status={st} />
+              <div 
+                key={s.id} 
+                className={`flex items-center gap-3 p-2 border rounded-xl transition-all duration-300 ${borderStyle}`}
+              >
+                {/* Active/Completed Indicators */}
+                <div className="shrink-0">
+                  {isDone ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  ) : isFailed ? (
+                    <XCircle className="w-4 h-4 text-rose-400 animate-bounce" />
+                  ) : isRunning ? (
+                    <div className="w-4 h-4 rounded-full border border-amber-400 border-t-transparent animate-spin" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border border-white/10" />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1 select-none">
+                    <span className={`text-[10px] font-semibold truncate ${
+                      isDone ? "text-slate-200" : isRunning ? "text-indigo-300" : "text-slate-500"
+                    }`}>
+                      {s.name}
+                    </span>
+                    <span className="text-[8px] font-mono text-slate-600 font-bold shrink-0">{s.num}</span>
                   </div>
-                  {out && <div style={{ fontSize:9, color:"#1e3a5f" }}>{Object.values(out).filter(v=>typeof v==="number").join("  ")}</div>}
+                  
+                  {out && (
+                    <div className="text-[8px] font-mono text-slate-500 mt-0.5 truncate uppercase tracking-wider">
+                      {Object.keys(out).length} outputs synthesized
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -69,38 +132,45 @@ export function RightPanel({
         </div>
       </div>
 
-      {/* Download artifacts */}
-      <div style={{ flexShrink:0 }}>
-        <PanelHeader icon="↓" title="ARTIFACTS" accent="#34d399" />
-        <div style={{ padding:"8px 12px 12px" }}>
-          {SCHEMA_TABS.filter(t => t !== "Generated Code").map(t=>(
-            <button key={t} onClick={()=>downloadJSON(t)} disabled={!done} style={{
-              display:"flex", justifyContent:"space-between", alignItems:"center",
-              width:"100%", padding:"6px 8px", marginBottom:4,
-              background:done?"#020f1a":"#020810",
-              border:`1px solid ${done?"#34d39920":"#0a1628"}`,
-              borderRadius:5, fontFamily:"inherit", fontSize:10,
-              color:done?"#64748b":"#1e3a5f", cursor:done?"pointer":"not-allowed",
-              transition:"all 0.15s",
-            }}
-              onMouseEnter={e=>{ if(done){e.currentTarget.style.borderColor="#34d39940";e.currentTarget.style.color="#34d399";} }}
-              onMouseLeave={e=>{ if(done){e.currentTarget.style.borderColor="#34d39920";e.currentTarget.style.color="#64748b";} }}
+      {/* 3. Download Artifacts cards */}
+      <div className="shrink-0 flex flex-col bg-slate-950/20">
+        <PanelHeader 
+          icon={<Download className="w-3.5 h-3.5" />} 
+          title="Generated Artifacts" 
+          accent="#10b981"
+        />
+        
+        <div className="p-3 space-y-1.5 select-none">
+          {SCHEMA_TABS.filter(t => t !== "Generated Code").map((t) => (
+            <button 
+              key={t} 
+              onClick={() => downloadJSON(t)} 
+              disabled={!done} 
+              className={`w-full flex items-center justify-between p-2 border rounded-lg transition-all text-[10px] font-mono ${
+                done 
+                  ? "bg-slate-900/40 border-white/[0.04] text-slate-400 hover:text-emerald-400 hover:border-emerald-500/20 cursor-pointer" 
+                  : "bg-slate-950/10 border-transparent text-slate-700 cursor-not-allowed"
+              }`}
             >
-              <span>{t.toLowerCase().replace(/ /g,"_")}.json</span>
-              <span style={{ fontSize:9 }}>↓</span>
+              <div className="flex items-center gap-1.5 truncate">
+                <FileJson className={`w-3.5 h-3.5 shrink-0 ${done ? "text-emerald-400/80" : "text-slate-700"}`} />
+                <span className="truncate">{t.toLowerCase().replace(/ /g, "_")}.json</span>
+              </div>
+              <Download className="w-3 h-3 text-slate-600 shrink-0 hover:text-emerald-400" />
             </button>
           ))}
-          <button onClick={()=>downloadJSON(null)} disabled={!done} style={{
-            display:"flex", justifyContent:"space-between", alignItems:"center",
-            width:"100%", padding:"6px 8px", marginTop:4,
-            background:done?"#0a1e32":"#020810",
-            border:`1px solid ${done?"#38bdf830":"#0a1628"}`,
-            borderRadius:5, fontFamily:"inherit", fontSize:10, fontWeight:600,
-            color:done?"#38bdf8":"#1e3a5f", cursor:done?"pointer":"not-allowed",
-            transition:"all 0.15s",
-          }}>
+          
+          <button 
+            onClick={() => downloadJSON(null)} 
+            disabled={!done} 
+            className={`w-full flex items-center justify-between p-2 border font-bold rounded-lg transition-all text-[10px] font-mono mt-3 ${
+              done 
+                ? "bg-indigo-950/20 border-indigo-500/20 text-indigo-400 hover:bg-indigo-950/30 hover:border-indigo-400 cursor-pointer" 
+                : "bg-slate-950/10 border-transparent text-slate-700 cursor-not-allowed"
+            }`}
+          >
             <span>all_schemas.json</span>
-            <span>↓ ALL</span>
+            <span className="text-[9px] uppercase tracking-wide">Download All</span>
           </button>
         </div>
       </div>
